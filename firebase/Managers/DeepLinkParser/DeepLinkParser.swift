@@ -25,16 +25,12 @@ final class DeepLinkParser: DeepLinkParserProtocol {
         let parameters = Dictionary(uniqueKeysWithValues: queryItems.map { ($0.name, $0.value ?? "") })
                 
         var deeplinkType: DeepLinkType
-        var parameterId: String
+        guard let parameterId = parameters["id"] else { return .failure(.invalidParameter)}
         
         switch host {
         case DeepLinkType.categoryDetail.rawValue :
-            guard let id = parameters["id"] else { return .failure(.invalidParameter)}
-            parameterId = id
             deeplinkType = .categoryDetail
         case DeepLinkType.productDetail.rawValue:
-            guard let id = parameters["id"] else { return .failure(.invalidParameter)}
-            parameterId = id
             deeplinkType = .productDetail
         default:
             return .failure(.unknownHost)

@@ -14,30 +14,25 @@ final class DeepLinkHandleManager: DeepLinkHandleProtocol {
     weak var deeplinkParser: DeepLinkParserProtocol?
     
     func handleDeeplink(with url: URL?) {
-        guard let deepLinkUrl = url else { return }
-            switch deeplinkParser?.parse(for: deepLinkUrl) {
-            case .success(let deepLinkModel):
-                pendingDeepLink = deepLinkModel
-            case .failure(let deepLinkError):
-                print("Error Ocurred \(deepLinkError)")
-            case .none:
-                return
-            }
+        guard let deepLinkUrl = url,
+        let deepLinkParseResult = deeplinkParser?.parse(for: deepLinkUrl) else {
+            return
+        }
+        switch deepLinkParseResult {
+        case .success(let deepLinkModel):
+            pendingDeepLink = deepLinkModel
+        case .failure(let deepLinkError):
+            print("Error Ocurred \(deepLinkError)")
+        }
         
     }
     
     func handleDeeplink(from userInfo: [AnyHashable : Any]) {
-        if let redirectInfoId = userInfo["id"] as? String,
-                  let type = userInfo["type"] as? String {
-            switch type {
-            case DeepLinkType.productDetail.rawValue:
-                pendingDeepLink = DeepLinkModel(type: .productDetail, url: nil, parameterId: redirectInfoId)
-            case DeepLinkType.categoryDetail.rawValue:
-                pendingDeepLink = DeepLinkModel(type: .categoryDetail, url: nil, parameterId: redirectInfoId)
-            default:
-                return
-            }
+        guard let redirectInfoId = userInfo["id"] as? String,
+              let redirectionType = userInfo["type"] as? String else {
+            return
         }
+        pendingDeepLink = DeepLinkModel(type: DeepLinkType(rawValue: redirectionType) ?? .none, parameterId: redirectInfoId)
     }
     
     func clearPendingDeepLink() {

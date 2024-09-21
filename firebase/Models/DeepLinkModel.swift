@@ -9,11 +9,12 @@ import Foundation
 
 struct DeepLinkModel {
     let type: DeepLinkType
-    let url: URL?
+    var url: URL?
     let parameterId: String
 }
 
 enum DeepLinkType: String {
     case productDetail = "productDetail"
     case categoryDetail = "categoryDetail"
+    case none
 }

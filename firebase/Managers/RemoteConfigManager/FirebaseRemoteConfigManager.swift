@@ -12,6 +12,10 @@ protocol FirebaseRemoteConfigProtocol: AnyObject {
     func onVersionForce(isWillForce: Bool)
 }
 
+protocol FirebaseRemoteConfigManagerProtocol {
+    func getValue(for key: String) -> RemoteConfigValue
+}
+
 private struct FirebaseRemoteConfigConstants {
      //     Declare your variables
      static let versionCodeKey = "ios_version_code"
@@ -22,6 +26,7 @@ final class FirebaseRemoteConfigManager {
     private let remoteConfig = RemoteConfig.remoteConfig()
     
     private var latestBuildNumberOnServer: String = ""
+    private var isVersionWillForce: Bool = false
     
     weak var delegate: FirebaseRemoteConfigProtocol?
     
@@ -48,6 +53,7 @@ final class FirebaseRemoteConfigManager {
             self.remoteConfig.fetchAndActivate(completionHandler: { (status, error) in
                 if status == .successFetchedFromRemote {
                     self.latestBuildNumberOnServer = self.remoteConfig.configValue(forKey: FirebaseRemoteConfigConstants.versionCodeKey).stringValue
+                    self.isVersionWillForce = self.remoteConfig.configValue(forKey: FirebaseRemoteConfigConstants.isVersionWillForce).boolValue
                 } else {
                     if let error = error {
                         ErrorHandler.shared.showError(error)
@@ -56,15 +62,16 @@ final class FirebaseRemoteConfigManager {
             })
         }
     }
-    
-    private func getValue(for key: String) -> RemoteConfigValue {
+}
+
+extension FirebaseRemoteConfigManager: FirebaseRemoteConfigManagerProtocol {
+    func getValue(for key: String) -> RemoteConfigValue {
         return remoteConfig.configValue(forKey: key)
     }
 }
 
 extension FirebaseRemoteConfigManager {
     func checkVersionForce() {
-        let isVersionWillForce = getValue(for: FirebaseRemoteConfigConstants.isVersionWillForce).boolValue
         if (appBuildNumber > latestBuildNumberOnServer) {
             delegate?.onVersionForce(isWillForce: isVersionWillForce)
         }

@@ -18,12 +18,12 @@ final class NotificationHandlerManager {
 
 extension NotificationHandlerManager: NotificationHandlerProtocol {
     func handleNotification(from userInfo: [AnyHashable : Any]) {
-        if let urlString = userInfo["deepLink"] as? String,
-           let deeplinkUrl = URL(string: urlString) {
-            handleNotification(with: deeplinkUrl)
-        } else {
+        guard let urlString = userInfo["deepLink"] as? String,
+              let deeplinkUrl = URL(string: urlString) else {
             deeplinkHandler?.handleDeeplink(from: userInfo)
+            return
         }
+        handleNotification(with: deeplinkUrl)
     }
     
     private func handleNotification(with url: URL) {
