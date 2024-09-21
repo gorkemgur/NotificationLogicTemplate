@@ -15,26 +15,19 @@ final class DeepLinkHandleManager: DeepLinkHandleProtocol {
     
     func handleDeeplink(with url: URL?) {
         guard let deepLinkUrl = url else { return }
-        DispatchQueue.global(qos: .background).async { [weak self] in
-            guard let self = self else { return }
             switch deeplinkParser?.parse(for: deepLinkUrl) {
             case .success(let deepLinkModel):
-                DispatchQueue.main.async {
-                    self.pendingDeepLink = deepLinkModel
-                }
+                pendingDeepLink = deepLinkModel
             case .failure(let deepLinkError):
                 print("Error Ocurred \(deepLinkError)")
             case .none:
                 return
             }
-        }
+        
     }
     
     func handleDeeplink(from userInfo: [AnyHashable : Any]) {
-        if let urlString = userInfo["deepLink"] as? String,
-           let deeplinkUrl = URL(string: urlString) {
-            handleDeeplink(with: deeplinkUrl)
-        } else if let redirectInfoId = userInfo["id"] as? String,
+        if let redirectInfoId = userInfo["id"] as? String,
                   let type = userInfo["type"] as? String {
             switch type {
             case DeepLinkType.productDetail.rawValue:
