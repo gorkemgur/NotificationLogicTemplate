@@ -6,10 +6,11 @@
 //
 
 import Foundation
+import Combine
 
 final class DeepLinkHandleManager: DeepLinkHandleProtocol {
     
-    private(set) var pendingDeepLink: DeepLinkModel?
+    @Published private(set) var pendingDeepLink: DeepLinkModel?
     
     weak var deeplinkParser: DeepLinkParserProtocol?
     
@@ -22,7 +23,7 @@ final class DeepLinkHandleManager: DeepLinkHandleProtocol {
         case .success(let deepLinkModel):
             pendingDeepLink = deepLinkModel
         case .failure(let deepLinkError):
-            print("Error Ocurred \(deepLinkError)")
+            handleDeepLinkError(error: deepLinkError)
         }
         
     }
@@ -37,5 +38,11 @@ final class DeepLinkHandleManager: DeepLinkHandleProtocol {
     
     func clearPendingDeepLink() {
         pendingDeepLink = nil
+    }
+}
+
+extension DeepLinkHandleManager {
+    private func handleDeepLinkError(error: DeepLinkError) {
+        ErrorHandler.shared.showError(error)
     }
 }
