@@ -40,17 +40,21 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             UserDefaults.standard.set(isAppOpenedFromNotification, forKey: "appOpenedFromNotification")
         }
         
+        FirebaseApp.configure()
+        
         //MARK: - Notifications
         registerRemoteNotification()
         application.registerForRemoteNotifications()
-        FirebaseApp.configure()
-        notificationManager.deeplinkHandler = deeplinkHandler
         deeplinkHandler.deeplinkParser = deeplinkParser
+        notificationManager.deeplinkHandler = deeplinkHandler
         UNUserNotificationCenter.current().delegate = self
         
         //MARK: - Remote Config
         remoteConfigManager.delegate = self
-        remoteConfigManager.checkVersionForce()
+        DispatchQueue.global(qos: .background).async { [weak self] in
+            guard let self = self else { return }
+            self.remoteConfigManager.checkVersionForce()
+        }
         
         window?.makeKeyAndVisible()
         return true
@@ -60,18 +64,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 extension AppDelegate: UNUserNotificationCenterDelegate {
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
         let userInfo = response.notification.request.content.userInfo
-        deeplinkHandler.handleDeeplink(from: userInfo)
+        notificationManager.handleNotification(from: userInfo)
         completionHandler()
     }
     
     func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable : Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
-        deeplinkHandler.handleDeeplink(from: userInfo)
         completionHandler(UIBackgroundFetchResult.newData)
     }
     
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
-        let userInfo = notification.request.content.userInfo
-        deeplinkHandler.handleDeeplink(from: userInfo)
         completionHandler([.banner, .sound])
     }
 }
