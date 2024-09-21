@@ -7,15 +7,8 @@
 
 import Foundation
 
-enum DeepLinkHandler<T> {
-    case success(T)
-    case failure(DeepLinkError)
-}
-
-typealias Result<T> = DeepLinkHandler<T>
-
 final class DeepLinkParser: DeepLinkParserProtocol {
-    func parse(for url: URL?) -> Result<DeepLinkModel> {
+    func parse(for url: URL?) -> Result<DeepLinkModel, DeepLinkError> {
         guard let deeplinkUrl = url, let components = URLComponents(url: deeplinkUrl, resolvingAgainstBaseURL: true),
               let host = components.host else {
             return .failure(.invalidURL)
@@ -40,7 +33,7 @@ final class DeepLinkParser: DeepLinkParserProtocol {
     }
 }
 
-enum DeepLinkError {
+enum DeepLinkError: LocalizedError {
     case invalidURL
     case invalidPath
     case invalidParameter

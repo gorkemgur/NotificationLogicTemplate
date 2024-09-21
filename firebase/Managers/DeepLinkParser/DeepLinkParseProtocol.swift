@@ -8,5 +8,5 @@
 import Foundation
 
 protocol DeepLinkParserProtocol: AnyObject {
-    func parse(for url: URL?) -> Result<DeepLinkModel>
+    func parse(for url: URL?) -> Result<DeepLinkModel, DeepLinkError>
 }
