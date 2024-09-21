@@ -10,5 +10,4 @@ import Foundation
 protocol NotificationHandlerProtocol: AnyObject {
     var deeplinkHandler: DeepLinkHandleProtocol? { get set }
     func handleNotification(from userInfo: [AnyHashable: Any])
-    func handleNotification(with url: URL)
 }
