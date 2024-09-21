@@ -43,21 +43,36 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         FirebaseApp.configure()
         
         //MARK: - Notifications
-        registerRemoteNotification()
         application.registerForRemoteNotifications()
+        setNotificationSettings()
+        
+        //MARK: - Remote Config
+        setRemoteConfig()
+        window?.rootViewController = UIViewController()
+        window?.makeKeyAndVisible()
+        return true
+    }
+    
+    private func setNotificationSettings() {
+        registerRemoteNotification()
         deeplinkHandler.deeplinkParser = deeplinkParser
         notificationManager.deeplinkHandler = deeplinkHandler
         UNUserNotificationCenter.current().delegate = self
-        
-        //MARK: - Remote Config
+    }
+    
+    private func setRemoteConfig() {
         remoteConfigManager.delegate = self
-        DispatchQueue.global(qos: .background).async { [weak self] in
+        remoteConfigManager.fetchRemoteValues() { [weak self] (isFetched, error) in
             guard let self = self else { return }
-            self.remoteConfigManager.checkVersionForce()
+            if isFetched {
+                self.remoteConfigManager.checkVersionForce()
+            } else {
+                if let error = error {
+                    ErrorHandler.shared.showError(error)
+                }
+            }
+            
         }
-        
-        window?.makeKeyAndVisible()
-        return true
     }
 }
 
@@ -78,13 +93,29 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
 }
 
 extension AppDelegate: FirebaseRemoteConfigProtocol {
-    func onVersionForce(isWillForce: Bool) {
-        showForceUpdateAlert(isWillForce: isWillForce)
+    
+    func onVersionForce(versionForceType: VersionForceType) {
+        switch versionForceType {
+        case .onUpdate(let isWillForce):
+            showForceUpdateAlert(isWillForce: isWillForce)
+        case .sameVersion:
+            startAppFlow()
+        }
+    }
+    
+    private func startAppFlow() {
+        //MARK: - REDIRECT
+        /*
+         let splashViewController = SplashViewController()
+         window?.rootViewController = splashViewController
+         window?.makeKeyAndVisible()
+         */
     }
     
     private func showForceUpdateAlert(isWillForce: Bool) {
+        let message = isWillForce ? "You can not use app with this version, you have to update app" : "You should update the app there is new features"
         let alertController = UIAlertController(title: "New Version Published",
-                                                message: "You have to install new version from appstore",
+                                                message: message,
                                                 preferredStyle: .alert)
         
         let updateAction = UIAlertAction(title: "Update", style: .default) { (_) in
@@ -97,12 +128,7 @@ extension AppDelegate: FirebaseRemoteConfigProtocol {
             if isWillForce {
                 exit(0)
             } else {
-                //MARK: - REDIRECT
-                /*
-                 let splashViewController = SplashViewController()
-                 window?.rootViewController = splashViewController
-                 window?.makeKeyAndVisible()
-                 */
+                self.startAppFlow()
             }
         }
         

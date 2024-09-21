@@ -8,8 +8,13 @@
 import Firebase
 import UIKit
 
+enum VersionForceType {
+    case onUpdate(isWillForce: Bool)
+    case sameVersion
+}
+
 protocol FirebaseRemoteConfigProtocol: AnyObject {
-    func onVersionForce(isWillForce: Bool)
+    func onVersionForce(versionForceType: VersionForceType)
 }
 
 protocol FirebaseRemoteConfigManagerProtocol {
@@ -47,20 +52,26 @@ final class FirebaseRemoteConfigManager {
         remoteConfig.configSettings = configSettings
     }
     
-    private func fetchRemoteConfigValues() {
+    
+    func fetchRemoteValues(completionHandler: @escaping ((Bool, Error?) -> ())) {
         DispatchQueue.global(qos: .background).async { [weak self] in
             guard let self = self else { return }
             self.remoteConfig.fetchAndActivate(completionHandler: { (status, error) in
                 if status == .successFetchedFromRemote {
                     self.latestBuildNumberOnServer = self.remoteConfig.configValue(forKey: FirebaseRemoteConfigConstants.versionCodeKey).stringValue
                     self.isVersionWillForce = self.remoteConfig.configValue(forKey: FirebaseRemoteConfigConstants.isVersionWillForce).boolValue
+                    completionHandler(true, nil)
                 } else {
                     if let error = error {
-                        ErrorHandler.shared.showError(error)
+                        completionHandler(false, error)
                     }
                 }
             })
         }
+    }
+    
+    func fetchRemoteConfigValues() {
+       
     }
 }
 
@@ -72,8 +83,9 @@ extension FirebaseRemoteConfigManager: FirebaseRemoteConfigManagerProtocol {
 
 extension FirebaseRemoteConfigManager {
     func checkVersionForce() {
-        if (appBuildNumber > latestBuildNumberOnServer) {
-            delegate?.onVersionForce(isWillForce: isVersionWillForce)
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.delegate?.onVersionForce(versionForceType: latestBuildNumberOnServer > appBuildNumber ? .onUpdate(isWillForce: isVersionWillForce) : .sameVersion)
         }
     }
     
